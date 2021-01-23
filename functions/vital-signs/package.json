@@ -1,0 +1,16 @@
+{
+    "name": "vital-signs",
+    "version": "0.1.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "1377283509@qq.com",
+    "license": "ISC",
+    "dependencies": {
+      "@cloudbase/node-sdk": "^2.0.2",
+      "tcb-router": "^1.1.2"
+    }
+  }
+  

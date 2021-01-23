@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "node",
+            "request": "attach",
+            "port": 9229,
+            "name": "[visit-record] 云函数本地调试",
+            "entry": "visit-record",
+            "cloudbaseLocal": true
+        },
+        {
+            "type": "node",
+            "name": "[visit-record] 云函数云端调试",
+            "port": 9222,
+            "request": "attach",
+            "cloudbaseRemote": true,
+            "remoteRoot": "/var/user",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "localRoot": "${workspaceFolder}\\functions\\visit-record"
+        }
+    ]
+}
