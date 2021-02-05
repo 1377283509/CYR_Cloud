@@ -3,7 +3,9 @@ const TcbRouter = require("tcb-router")
 
 
 // 初始化云环境，使用默认云环境
-const cloud = tcb.init()
+const cloud = tcb.init({
+    env: "cyr-8gbthlqn6c4254da"
+})
 // 初始化数据库
 const db = cloud.database()
 const _ = db.command

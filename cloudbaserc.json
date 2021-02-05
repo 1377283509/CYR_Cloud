@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "envId": "",
+  "envId": "cyr-8gbthlqn6c4254da",
   "$schema": "https://framework-1258016615.tcloudbaseapp.com/schema/latest.json",
   "functionRoot": "./functions",
   "functions": [

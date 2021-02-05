@@ -3,7 +3,9 @@ const tcb = require("@cloudbase/node-sdk")
 const TcbRouter = require("tcb-router")
 
 // 初始化云环境，使用默认云环境
-const cloud = tcb.init();
+const cloud = tcb.init({
+    env: "cyr-8gbthlqn6c4254da"
+});
 // 初始化数据库
 const db = cloud.database()
 const _ = db.command
@@ -47,7 +49,7 @@ exports.main = async function (event) {
         try {
             const res = await db.collection(messageCollection).where({
                 to: event.doctor
-            }).orderBy("state", "asc").get()
+            }).orderBy("state", "asc").orderBy("sendTime", "desc").get()
             ctx.body = {
                 code: 1,
                 data: res.data

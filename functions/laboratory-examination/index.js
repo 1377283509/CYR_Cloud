@@ -5,7 +5,9 @@ const TcbRouter = require("tcb-router")
 
 
 // 初始化云环境，使用默认云环境
-const cloud = tcb.init()
+const cloud = tcb.init({
+    env: "cyr-8gbthlqn6c4254da"
+})
 // 初始化数据库
 const db = cloud.database()
 const _ = db.command
@@ -52,27 +54,6 @@ exports.main = async function (event) {
             }
         }
 
-    })
-
-    // 更新照片信息
-    app.router("setImages", async (ctx, next) => {
-        try {
-            await db.collection(leCollection).doc(event.id).update({
-                images: event.images
-            })
-
-            ctx.body = {
-                code: 1,
-                data: "SUCCESS"
-            }
-
-        } catch (error) {
-            console.error(error)
-            ctx.body = {
-                code: 0,
-                data: "云函数异常"
-            }
-        }
     })
 
     // 开始抽血
@@ -122,33 +103,12 @@ exports.main = async function (event) {
         try {
             await db.collection(leCollection).doc(event.id).update({
                 images: event.images,
+                endTime: event.endTime
             })
             ctx.body = {
                 code: 1,
                 data: "SUNCCESS"
             }
-        } catch (error) {
-            console.error(error)
-            ctx.body = {
-                code: 0,
-                data: "云函数异常"
-            }
-        }
-    })
-
-    // 更新完成时间
-    app.router("setEndTime", async (ctx, next) => {
-        try {
-            await db.collection(leCollection).doc(event.id).update({
-                endTime: event.endTime,
-                state: true
-            })
-
-            ctx.body = {
-                code: 1,
-                data: "SUCCESS"
-            }
-
         } catch (error) {
             console.error(error)
             ctx.body = {

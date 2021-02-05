@@ -4,7 +4,9 @@ const TcbRouter = require("tcb-router")
 
 
 // 初始化云环境，使用默认云环境
-const cloud = tcb.init()
+const cloud = tcb.init({
+    env: "cyr-8gbthlqn6c4254da"
+})
 // 初始化数据库
 const db = cloud.database()
 const _ = db.command
@@ -13,6 +15,14 @@ const _ = db.command
 const visitRecordsCollection = "visit-records"
 // 患者集合
 const patientsCollection = "patients"
+
+// 静脉溶栓集合
+const ivctCollection = "ivct"
+// 血管内治疗集合
+const evtCollection = "evt"
+// CT集合
+const ctCollection = "ct"
+const referDurationCollection = "refer-duration"
 
 exports.main = async function (event) {
 
@@ -40,6 +50,42 @@ exports.main = async function (event) {
                 visitTime: true,
                 diseaseTime: true,
                 isWeekUpStroke: true,
+                doctorId: true,
+                doctorName: true,
+                "patient.name": true,
+                "patient.age": true,
+                "patient.phone": true,
+                "patient.gender": true,
+                "patient.idCard": true,
+                "doctor.name": true,
+                "doctor.idCard": true
+            }).end()
+            ctx.body = {
+                code: 1,
+                data: res.data
+            }
+        } catch (error) {
+            console.log(error)
+            ctx.body = {
+                code: 0,
+                data: "数据库异常"
+            }
+        }
+    })
+
+    // 获取所有完成就诊的患者
+    app.router("getAllFinishedRecords", async(ctx, next)=>{
+        try {
+            const res = await db.collection(visitRecordsCollection).aggregate().match({
+                state: true
+            }).lookup({
+                localField: "patient",
+                foreignField: "_id",
+                from: patientsCollection,
+                as: "patient"
+            }).project({
+                _id: true,
+                visitTime: true,
                 doctorId: true,
                 doctorName: true,
                 "patient.name": true,
@@ -112,6 +158,7 @@ exports.main = async function (event) {
                 isTIA: true,
                 diseaseTime: true,
                 isWeekUpStroke: true,
+                arriveTime:true,
                 lastStep: true,
                 isIVCT: true,
                 isEVT: true,
@@ -163,6 +210,7 @@ exports.main = async function (event) {
                     lastStep: true,
                     isIVCT: true,
                     isEVT: true,
+                    arriveTime: true,
                     bangle: true,
                     doctorId: true,
                     doctorName: true,
@@ -191,13 +239,13 @@ exports.main = async function (event) {
             }
         })
 
-    // 绑定手环,设置就诊时间
+    // 绑定手环,设置到院时间
     app.router("bindBangle",
         async (ctx, next) => {
             try {
                 await db.collection(visitRecordsCollection).doc(event.id).update({
                     bangle: event.bangle,
-                    visitTime: event.visitTime
+                    arriveTime: event.arriveTime
                 })
                 ctx.body = {
                     code: 1,
@@ -307,7 +355,8 @@ exports.main = async function (event) {
         try {
             await db.collection(visitRecordsCollection).doc(event.id).update({
                 doctorId: event.doctorId,
-                doctorName: event.doctorName
+                doctorName: event.doctorName,
+                visitTime: event.visitTime
             })
             ctx.body = {
                 code: 1,
@@ -406,6 +455,98 @@ exports.main = async function (event) {
                 code: 0,
                 data: "云函数异常"
             }
+        }
+    })
+
+
+    // 获取时间节点信息
+    app.router("getTimePointData", async(ctx, next)=>{
+        try {
+            data = {
+
+            }
+            // 就诊时间
+            // 到院时间
+            // 发病时间
+            const visitRecordInfo = await db.collection(visitRecordsCollection).where({
+                _id: event.id,
+            }).field({
+                visitTime: true,
+                arriveTime: true,
+                diseaseTime: true
+            }).get()
+            if(visitRecordInfo.data.length != 0){
+                data.visitTime = visitRecordInfo.data[0].visitTime
+                data.arriveTime = visitRecordInfo.data[0].arriveTime
+                data.diseaseTime = visitRecordInfo.data[0].diseaseTime
+            }
+            // CT完成时间
+            const ctInfo = await db.collection(ctCollection).where({
+                visitRecordId: event.id
+            }).field({
+                endTime: true
+            }).get()
+            if(ctInfo.data.length != 0){
+                data.ctFinishedTime = ctInfo.data[0].endTime
+            }
+            // 血管内治疗开始知情时间
+            // 血管内治疗知情结束时间
+            // 穿刺时间
+            // 再通时间
+            // 造影完成时间
+            const evtInfo = await db.collection(evtCollection).where({
+                visitRecordId: event.id
+            }).field({
+                startWitting: true,
+                endWitting: true,
+                punctureTime: true,
+                radiographyTime: true,
+                revascularizationTime: true,
+            }).get()
+            if(evtInfo.data.length != 0){
+                data.evtStartWitting = evtInfo.data[0].startWitting
+                data.evtEndWitting = evtInfo.data[0].endWitting
+                data.punctureTime = evtInfo.data[0].punctureTime
+                data.radiographyTime = evtInfo.data[0].radiographyTime
+                data.revascularizationTime = evtInfo.data[0].revascularizationTime
+            }
+            // 溶栓开始时间
+            // 溶栓开始知情时间
+            // 溶栓签署知情时间
+            const ivctInfo = await db.collection(ivctCollection).where({
+                visitRecordId: event.id
+            }).field({
+                startWitting: true,
+                startTime: true,
+                endWitting: true
+            }).get()
+            if(ivctInfo.data.length != 0){
+                data.ivctStartWitting = ivctInfo.data[0].startWitting
+                data.ivctEndWitting = ivctInfo.data[0].endWitting
+                data.ivctStartTime = ivctInfo.data[0].startTime
+            }
+
+            // 获取参考时长
+            const referDuration = await db.collection(referDurationCollection).limit(1).get()
+            if(referDuration.data.length != 0){
+                data.dnt = referDuration.data[0].dnt
+                data.ont = referDuration.data[0].ont
+                data.dpt = referDuration.data[0].dpt
+                data.drt = referDuration.data[0].drt
+                data.odt = referDuration.data[0].odt
+            }
+            ctx.body = {
+                code: 1,
+                data: data
+            }
+        } catch (error) {
+            console.log('====================================');
+            console.log(error);
+            console.log('====================================');
+            ctx.body = {
+                code: 0,
+                data: "云函数异常"
+            }   
         }
     })
 
